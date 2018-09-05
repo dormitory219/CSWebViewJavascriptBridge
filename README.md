@@ -540,5 +540,100 @@ CSJSBridgeCore.prototype.callbackWeb = function(data){
    至此，native-JS流程结束。
 
 
-### 3.其它
-  待更新。
+### 3.两端模块化定义：
+
+  JS调用native的业务，我们希望通过两端都一致用模块化的思路去定义，一个 JS调用native的事件，我们定义它是在xx模块（handler）中的xxAction。
+    
+  JS端：
+  
+  如commonHandler为一个模块，该模块定义常规性的调用native的操作，比如调起分享action，获取用户信息数据action，获取设备信息action等;
+  coreHandler为一个最底层模块，目前只有logAction;
+ 
+ 
+  ```
+  CSJSCommonHandler.prototype.getDeviceInfo = function(callback){
+        var msg = {};
+        msg.handler = 'common';
+        msg.action = 'getDeviceInfo';
+        jsCommonHandler.webCallNative(msg, callback);
+    } 
+  ```
+  而对应在native端：
+  
+  由CSJSCommonHandler模块来处理该模块action，具体action由handler分发到对应action来处理业务：
+  CSJSShareAction，CSGetDeviceInfoAction
+  
+  
+### 4.native调用JS时方法的动态化：
+  该方案中在native中对JS的调用有两处，一处是JS主动调用native，native处理业务之后回调JS，此时会调用JS的callback方法，二处是native主动向JS发送native事件callweb。native端这样直接调用JS，不免会有硬编码的诟病，而且一旦JS端方法发生变化，native端是完全无感知的，所以，方案里是使用了另外一种方式。native调JS的方法是通过JS传递给native端的，native端保存之后再进行相关调用。
+ 
+ 如下的nativeCallWebFunction，callbackFunction便是从JS传递数据解析过来的：
+ 
+  
+  ```
+  - (void)callAppNative:(id)message
+{
+    if ([message isKindOfClass:[NSDictionary class]])
+    {
+        [[CSJSBridgeActionHandlerManager shareManager] callHandler:messageBody.handler message:messageBody JSCallBackBlock:^(CSJSMessage *message) {
+            
+            self.nativeCallWebFunction = messageBody.nativeCallWebFunction;
+           
+            //有回调，处理回调:ios回调js，js中对应的对象及方法，如::bridge.callbackWeb,动态获取，非写死
+            if (message.callbackID.length) {
+                self.jsCallbackFunction = message.callbackFunction;
+                NSString* script = [NSString stringWithFormat:@"%@('%@');", self.jsCallbackFunction,[message toJavascriptMessage]];
+            }
+        }];
+    }
+}
+
+  ```
+  
+### 5.log调试：
+  之前在项目中老的JS-native通信中经常遇到一些问题很难调试，native端无法知道JS调用的结果异常与否，所以在corehandler里加了logAction来帮助将JS端的log直接输出到native端。
+   
+   JS端：
+   
+   ```
+   CSJSBridgeCore.prototype.nativelog = function (data) {  
+    var msgBody = {};
+    msgBody.handler = 'core';
+    msgBody.action = 'nativelog';
+    msgBody.data = data;
+    this.webCallNative(msgBody);
+    }
+   ```
+   
+   native端：
+   
+   
+   **CSJSLogAction.m**
+   
+   ```
+   - (void)callAppActionWithMessage:(CSJSMessage *)message jsCallBackBlock:(CSJSCallBackBlock)jsCallBackBlock
+{
+    CSJSMessage *responceMessage  = message;
+    NSDictionary *dic = [responceMessage toDictionary];
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dic options:NSJSONWritingPrettyPrinted error:nil];
+    NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    CSLog([[@"<<\n fromJslog: " stringByAppendingString:jsonString] stringByAppendingString:@"\n>>"]);
+    jsCallBackBlock ? jsCallBackBlock(responceMessage) : nil;
+}
+   ```
+    
+   
+
+ 
+ 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
