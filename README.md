@@ -33,7 +33,9 @@
 
 ## 本方案技术实现:
 
-### 1. JS调用native:
+### 核心通信实现:
+
+#### 1. JS调用native:
    
    JS中webCallNative方法进行JS对native的业务调用，该方法挂载在CSJSBridgeCore上，调用时传入一个callback作为回调，每次调用时生成一个callbackID与callback映射到一个map中去。然后真正调用根据native端平台的判定，调不同方法。
    
@@ -436,7 +438,7 @@ CSJSBridgeCore.prototype.callbackWeb = function(data){
 ```
 
 
-### 2. native调用JS:
+#### 2. native调用JS:
   这类业务普遍是native端提供相关事件，web端对native的事件进行注册监听。native一旦事件触发，web端对监听的事件进行响应。
   一般监听事件两种：
   
@@ -539,8 +541,8 @@ CSJSBridgeCore.prototype.callbackWeb = function(data){
 
    至此，native-JS流程结束。
 
-
-### 3.两端模块化定义：
+### 其它
+#### 1.两端模块化定义：
 
   JS调用native的业务，我们希望通过两端都一致用模块化的思路去定义，一个 JS调用native的事件，我们定义它是在xx模块（handler）中的xxAction。
     
@@ -564,7 +566,7 @@ CSJSBridgeCore.prototype.callbackWeb = function(data){
   CSJSShareAction，CSGetDeviceInfoAction
   
   
-### 4.native调用JS时方法的动态化：
+#### 2.native调用JS时方法的动态化：
   该方案中在native中对JS的调用有两处，一处是JS主动调用native，native处理业务之后回调JS，此时会调用JS的callback方法，二处是native主动向JS发送native事件callweb。native端这样直接调用JS，不免会有硬编码的诟病，而且一旦JS端方法发生变化，native端是完全无感知的，所以，方案里是使用了另外一种方式。native调JS的方法是通过JS传递给native端的，native端保存之后再进行相关调用。
  
  如下的nativeCallWebFunction，callbackFunction便是从JS传递数据解析过来的：
@@ -590,7 +592,7 @@ CSJSBridgeCore.prototype.callbackWeb = function(data){
 
   ```
   
-### 5.log调试：
+#### 3.log调试：
   之前在项目中老的JS-native通信中经常遇到一些问题很难调试，native端无法知道JS调用的结果异常与否，所以在corehandler里加了logAction来帮助将JS端的log直接输出到native端。
    
    JS端：
@@ -621,7 +623,21 @@ CSJSBridgeCore.prototype.callbackWeb = function(data){
     jsCallBackBlock ? jsCallBackBlock(responceMessage) : nil;
 }
    ```
+   
+   
+#### 4.关于JS端依赖模块的编写：
+   本方案中JS端核心代码为CSJSBridgeCore.js文件，JS端新模块业务直接调用CSJSBridgeCore的方法，参照模块为CSJSCommonHandler.js。
+   CSJSBridgeCore.js的使用有两种方式：
+   
+   1. 可由web页面script标签引入；
+   2. 可提前在native端执行；
+   
+CSWebViewJavascriptBridge使用的是第二种。
+   
+目前CSJSBridgeCore.js的编程思想，整个文件为一个执行闭包，核心对象为CSJSBridgeCore，挂载在window上的一个全局对象。对于现在web的SPA应用开发，这并不是标准的模块化编程方式。这一块可在之后使用es6的模块化方式进行书写，支持npm。
     
+#### 5.
+待更新
    
 
  
