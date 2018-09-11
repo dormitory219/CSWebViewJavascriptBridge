@@ -2,7 +2,7 @@
 一个优雅的hybrid方案：native,JS端两端实现
 
 
-**CSWebViewJavascriptBridge是一套hybrid方案，包括iOS端与Web端的实现，可以为任意webView提供hybrid能力，也可以直接使用webBrowViewController提供的hybrid能力。JS端的依赖脚本提前注入到native的webview中，业务JS中可直接根据业务模块进行调用，扩充。**
+**CSWebViewJavascriptBridge是一套hybrid方案，包括iOS端与Web端的实现，可以为UIWebView,WKWebWiew提供hybrid能力。**
 
 
 整体框架如图：
@@ -20,7 +20,7 @@
 ![Alt text](https://github.com/dormitory219/CSWebViewJavascriptBridge/blob/master/Readme/web.png)
 
 
-### 说点其他的，hybrid能力分两大类
+### hybrid能力分两大类
 1. web主动调用native,native处理完业务逻辑后回调web，web再处理相关业务逻辑;
 2. native主动调用web,web处理完业务逻辑后回调native;
 
@@ -636,8 +636,16 @@ CSWebViewJavascriptBridge使用的是第二种。
    
 目前CSJSBridgeCore.js的编程思想，整个文件为一个执行闭包，核心对象为CSJSBridgeCore，挂载在window上的一个全局对象。对于现在web的SPA应用开发，这并不是标准的模块化编程方式。这一块可在之后使用es6的模块化方式进行书写，支持npm。
     
-#### 5.
-待更新
+
+
+------
+本文的主要思路来自于味精的两篇文章，
+
+http://awhisper.github.io/2018/01/02/hybrid-jscomunication/
+
+http://awhisper.github.io/2018/03/06/hybrid-webcontainer/
+
+配合这两篇文章，再结合这套源码，hybrid这套，似乎没什么难的了。
    
 
  
