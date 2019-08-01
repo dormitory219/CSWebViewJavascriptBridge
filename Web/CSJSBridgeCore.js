@@ -59,11 +59,11 @@
         }
    };
    function _callIOSNative(msg){
-        // var isWkWebView =  window.webkit.messageHandlers.CSJSWebViewBridgeCore ? true : false;
-        if(1){
-        CSJSWebViewBridgeCore.callApp(msg);
+        var isWkWebView =  window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.CSJSWebViewBridgeCore ? true : false;
+        if(!isWkWebView){
+            CSJSWebViewBridgeCore.callApp(msg);
         }else {
-        window.webkit.messageHandlers.CSJSWebViewBridgeCore.postMessage(msg);
+           window.webkit.messageHandlers.CSJSWebViewBridgeCore.postMessage(msg);
         }
    }
 
